@@ -15,11 +15,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     const result = await authService.login(input.email, input.password, signJwt);
 
+    const isProd = process.env.NODE_ENV === 'production';
+
     reply.setCookie(REFRESH_COOKIE_NAME, result.rawRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/auth',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
       expires: result.expiresAt,
     });
 
@@ -39,12 +41,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     };
 
     const result = await authService.refresh(rawRefreshToken || '', signJwt);
+    const isProd = process.env.NODE_ENV === 'production';
 
     reply.setCookie(REFRESH_COOKIE_NAME, result.rawRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/api/auth',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
       expires: result.expiresAt,
     });
 
@@ -60,8 +63,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const rawRefreshToken = request.cookies[REFRESH_COOKIE_NAME];
     await authService.logout(rawRefreshToken);
 
+    const isProd = process.env.NODE_ENV === 'production';
     reply.clearCookie(REFRESH_COOKIE_NAME, {
-      path: '/api/auth',
+      path: '/',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
     });
 
     return reply.status(200).send({
